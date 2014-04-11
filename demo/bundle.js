@@ -21,8 +21,8 @@ var util    = require('util'),
     rattrap = require('rattrap');
 
 // TODO: polyfill
-var raf     = window.requestAnimationFrame,
-    caf     = window.cancelAnimationFrame;
+var raf     = window.requestAnimationFrame.bind(window),
+    caf     = window.cancelAnimationFrame.bind(window);
 
 var EPSILON = 0.0000001;
 
@@ -34,7 +34,8 @@ function Swipe(el, opts) {
     var self        = this,
         axis        = opts.axis || 'both',
         inertia     = opts.inertia || false,
-        friction    = opts.friction || 0.8;
+        friction    = opts.friction || 0.8,
+        scale       = opts.scale || 1;
 
     var afId        = null;
 
@@ -45,6 +46,8 @@ function Swipe(el, opts) {
             caf(afId);
             afId = null;
         }
+
+        self.emit('touchstart');
 
         var startX  = evt.pageX,
             startY  = evt.pageY,
@@ -78,12 +81,18 @@ function Swipe(el, opts) {
         }
 
         function setupInertia() {
+
+            self.emit('inertiastart', {
+                vx  : vx,
+                vy  : vy
+            });
+
             afId = raf(function tick() {
 
-                var now = Date.now();
-
-                var x = lastX + (vx * (now - lastT)),
-                    y = lastY + (vy * (now - lastT));
+                var now = Date.now(),
+                    dt  = now - lastT,
+                    x   = lastX + (vx * dt),
+                    y   = lastY + (vy * dt);
 
                 handleMove(now, x, y);
 
@@ -100,7 +109,7 @@ function Swipe(el, opts) {
             });
         }
 
-        var cancel = rattrap.startCapture({
+        var cancel = rattrap.startCapture(document, {
             mousemove: function(evt) {
                 handleMove(
                     Date.now(),
@@ -109,7 +118,9 @@ function Swipe(el, opts) {
                 );
             },
             mouseup: function() {
-                if (inertia && (vx || vy)) {
+                self.emit('touchend');
+                var moving = Math.sqrt(vx*vx + vy*vy) > EPSILON;
+                if (inertia && moving) {
                     setupInertia();
                 }
                 cancel();
