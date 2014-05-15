@@ -16,7 +16,7 @@ function Swipe(el, opts) {
     opts = opts || {};
 
     var EVT_DOWN, EVT_UP, EVT_MOVE;
-    if ('touchstart' in el) {
+    if ('ontouchstart' in el) {
         EVT_DOWN    = 'touchstart';
         EVT_UP      = 'touchend';
         EVT_MOVE    = 'touchmove';
