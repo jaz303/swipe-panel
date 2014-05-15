@@ -15,8 +15,20 @@ function Swipe(el, opts) {
 
     opts = opts || {};
 
+    var self        = this,
+        axis        = opts.axis || 'both',
+        inertia     = opts.inertia || false,
+        friction    = opts.friction || 0.8,
+        scale       = opts.scale || 1,
+        debug       = !!opts.debug,
+        touch       = opts.forceTouch ? true : ('touchstart' in window);
+
+    if (debug) {
+        console.log("swipe-panel:touch", touch);
+    }
+
     var EVT_DOWN, EVT_UP, EVT_MOVE;
-    if ('ontouchstart' in el) {
+    if (touch) {
         EVT_DOWN    = 'touchstart';
         EVT_UP      = 'touchend';
         EVT_MOVE    = 'touchmove';
@@ -26,18 +38,17 @@ function Swipe(el, opts) {
         EVT_MOVE    = 'mousemove';
     }
 
-    var self        = this,
-        axis        = opts.axis || 'both',
-        inertia     = opts.inertia || false,
-        friction    = opts.friction || 0.8,
-        scale       = opts.scale || 1,
-        debug       = !!opts.debug;
-
     var afId        = null;
 
     el.addEventListener(EVT_DOWN, function(evt) {
 
-        console.log("swipe-panel:down", evt);
+        if (debug) {
+            console.log("swipe-panel:down", evt);    
+        }
+
+        if (touch) {
+            var touchId = evt.changedTouches[0].identifier;
+        }
 
         // cancel inertia
         if (afId) {
@@ -107,39 +118,95 @@ function Swipe(el, opts) {
             });
         }
 
-        var hnd = {};
-        
-        hnd[EVT_MOVE] = function(evt) {
-
-            if (debug) {
-                console.log("swipe-panel:move", evt);
-            }
-
-            handleMove(
-                Date.now(),
-                axis === 'y' ? startX : evt.pageX,
-                axis === 'x' ? startY : evt.pageY
-            );
-
-        };
-
-        hnd[EVT_UP] = function(evt) {
-
-            if (debug) {
-                console.log("swipe-panel:up", evt);
-            }
-
+        function gestureOver() {
             self.emit('touchend');
             var moving = Math.sqrt(vx*vx + vy*vy) > EPSILON;
             if (inertia && moving) {
                 setupInertia();
             }
-
-            cancel();
-
         }
 
-        var cancel = rattrap.startCapture(document, hnd);
+        if (touch) {
+
+            // var styleBefore = document.body.style.pointerEvents;
+            // document.body.style.pointerEvents = 'none !important';
+
+            function touchMove(evt) {
+                
+                var touch = evt.changedTouches.identifiedTouch(touchId);
+                if (!touch) return;
+
+                if (debug) {
+                    console.log("swipe-panel:move", evt);
+                }
+
+                evt.stopPropagation();
+                evt.preventDefault();
+
+                handleMove(
+                    Date.now(),
+                    axis === 'y' ? startX : touch.pageX,
+                    axis === 'x' ? startY : touch.pageY
+                );
+
+            }
+
+            function touchEnd(evt) {
+
+                var touch = evt.changedTouches.identifiedTouch(touchId);
+                if (!touch) return;
+
+                if (debug) {
+                    console.log("swipe-panel:up", evt);
+                }
+
+                evt.stopPropagation();
+                evt.preventDefault();
+
+                gestureOver();
+
+                // document.body.style.pointerEvents = styleBefore;
+
+                document.body.removeEventListener('touchmove', touchMove, true);
+                document.body.removeEventListener('touchend', touchEnd, true);
+            
+            }
+
+            document.body.addEventListener('touchmove', touchMove, true);
+            document.body.addEventListener('touchend', touchEnd, true);
+
+        } else {
+
+            var hnd = {};
+            
+            hnd[EVT_MOVE] = function(evt) {
+
+                if (debug) {
+                    console.log("swipe-panel:move", evt);
+                }
+
+                handleMove(
+                    Date.now(),
+                    axis === 'y' ? startX : evt.pageX,
+                    axis === 'x' ? startY : evt.pageY
+                );
+
+            };
+
+            hnd[EVT_UP] = function(evt) {
+
+                if (debug) {
+                    console.log("swipe-panel:up", evt);
+                }
+
+                gestureOver();
+                cancel();
+
+            }
+
+            var cancel = rattrap.startCapture(document, hnd);
+
+        }
 
     });
 
