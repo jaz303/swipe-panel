@@ -21,7 +21,7 @@ function Swipe(el, opts) {
         friction    = opts.friction || 0.8,
         scale       = opts.scale || 1,
         debug       = !!opts.debug,
-        touch       = opts.forceTouch ? true : ('touchstart' in window);
+        touch       = opts.forceTouch ? true : ('ontouchstart' in window);
 
     if (debug) {
         console.log("swipe-panel:touch", touch);
