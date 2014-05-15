@@ -3,6 +3,7 @@ var swipe = require('../');
 window.init = function() {
 
 	var panel = swipe(document.getElementById('target-1'), {
+		debug: true,
 		inertia: true,
 		axis: 'y'
 	});

@@ -4,6 +4,7 @@ var swipe = require('../');
 window.init = function() {
 
 	var panel = swipe(document.getElementById('target-1'), {
+		debug: true,
 		inertia: true,
 		axis: 'y'
 	});
@@ -32,7 +33,7 @@ function Swipe(el, opts) {
     opts = opts || {};
 
     var EVT_DOWN, EVT_UP, EVT_MOVE;
-    if ('touchstart' in el) {
+    if ('ontouchstart' in el) {
         EVT_DOWN    = 'touchstart';
         EVT_UP      = 'touchend';
         EVT_MOVE    = 'touchmove';
@@ -42,17 +43,18 @@ function Swipe(el, opts) {
         EVT_MOVE    = 'mousemove';
     }
 
-    console.log(EVT_DOWN, EVT_UP, EVT_MOVE);
-
     var self        = this,
         axis        = opts.axis || 'both',
         inertia     = opts.inertia || false,
         friction    = opts.friction || 0.8,
-        scale       = opts.scale || 1;
+        scale       = opts.scale || 1,
+        debug       = !!opts.debug;
 
     var afId        = null;
 
     el.addEventListener(EVT_DOWN, function(evt) {
+
+        console.log("swipe-panel:down", evt);
 
         // cancel inertia
         if (afId) {
@@ -125,20 +127,33 @@ function Swipe(el, opts) {
         var hnd = {};
         
         hnd[EVT_MOVE] = function(evt) {
+
+            if (debug) {
+                console.log("swipe-panel:move", evt);
+            }
+
             handleMove(
                 Date.now(),
                 axis === 'y' ? startX : evt.pageX,
                 axis === 'x' ? startY : evt.pageY
             );
+
         };
 
-        hnd[EVT_UP] = function() {
+        hnd[EVT_UP] = function(evt) {
+
+            if (debug) {
+                console.log("swipe-panel:up", evt);
+            }
+
             self.emit('touchend');
             var moving = Math.sqrt(vx*vx + vy*vy) > EPSILON;
             if (inertia && moving) {
                 setupInertia();
             }
+
             cancel();
+
         }
 
         var cancel = rattrap.startCapture(document, hnd);
