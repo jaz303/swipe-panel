@@ -1,6 +1,6 @@
 {
   "name": "swipe-panel",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "DOM swipe detector/emitter",
   "main": "index.js",
   "scripts": {
