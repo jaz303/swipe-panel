@@ -31,6 +31,19 @@ function Swipe(el, opts) {
 
     opts = opts || {};
 
+    var EVT_DOWN, EVT_UP, EVT_MOVE;
+    if ('touchstart' in el) {
+        EVT_DOWN    = 'touchstart';
+        EVT_UP      = 'touchend';
+        EVT_MOVE    = 'touchmove';
+    } else {
+        EVT_DOWN    = 'mousedown';
+        EVT_UP      = 'mouseup';
+        EVT_MOVE    = 'mousemove';
+    }
+
+    console.log(EVT_DOWN, EVT_UP, EVT_MOVE);
+
     var self        = this,
         axis        = opts.axis || 'both',
         inertia     = opts.inertia || false,
@@ -39,7 +52,7 @@ function Swipe(el, opts) {
 
     var afId        = null;
 
-    el.addEventListener('mousedown', function(evt) {
+    el.addEventListener(EVT_DOWN, function(evt) {
 
         // cancel inertia
         if (afId) {
@@ -109,23 +122,26 @@ function Swipe(el, opts) {
             });
         }
 
-        var cancel = rattrap.startCapture(document, {
-            mousemove: function(evt) {
-                handleMove(
-                    Date.now(),
-                    axis === 'y' ? startX : evt.pageX,
-                    axis === 'x' ? startY : evt.pageY
-                );
-            },
-            mouseup: function() {
-                self.emit('touchend');
-                var moving = Math.sqrt(vx*vx + vy*vy) > EPSILON;
-                if (inertia && moving) {
-                    setupInertia();
-                }
-                cancel();
+        var hnd = {};
+        
+        hnd[EVT_MOVE] = function(evt) {
+            handleMove(
+                Date.now(),
+                axis === 'y' ? startX : evt.pageX,
+                axis === 'x' ? startY : evt.pageY
+            );
+        };
+
+        hnd[EVT_UP] = function() {
+            self.emit('touchend');
+            var moving = Math.sqrt(vx*vx + vy*vy) > EPSILON;
+            if (inertia && moving) {
+                setupInertia();
             }
-        });
+            cancel();
+        }
+
+        var cancel = rattrap.startCapture(document, hnd);
 
     });
 
@@ -566,6 +582,13 @@ process.browser = true;
 process.env = {};
 process.argv = [];
 
+function noop() {}
+
+process.on = noop;
+process.once = noop;
+process.off = noop;
+process.emit = noop;
+
 process.binding = function (name) {
     throw new Error('process.binding is not supported');
 }
@@ -584,7 +607,8 @@ module.exports = function isBuffer(arg) {
     && typeof arg.readUInt8 === 'function';
 }
 },{}],8:[function(require,module,exports){
-(function (process,global){// Copyright Joyent, Inc. and other Node contributors.
+(function (process,global){
+// Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -1170,5 +1194,6 @@ exports._extend = function(origin, add) {
 function hasOwnProperty(obj, prop) {
   return Object.prototype.hasOwnProperty.call(obj, prop);
 }
-}).call(this,require("/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":7,"/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":6,"inherits":5}]},{},[1])
+
+}).call(this,require("/usr/local/lib/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./support/isBuffer":7,"/usr/local/lib/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":6,"inherits":5}]},{},[1])

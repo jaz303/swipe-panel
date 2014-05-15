@@ -15,6 +15,17 @@ function Swipe(el, opts) {
 
     opts = opts || {};
 
+    var EVT_DOWN, EVT_UP, EVT_MOVE;
+    if ('touchstart' in el) {
+        EVT_DOWN    = 'touchstart';
+        EVT_UP      = 'touchend';
+        EVT_MOVE    = 'touchmove';
+    } else {
+        EVT_DOWN    = 'mousedown';
+        EVT_UP      = 'mouseup';
+        EVT_MOVE    = 'mousemove';
+    }
+
     var self        = this,
         axis        = opts.axis || 'both',
         inertia     = opts.inertia || false,
@@ -23,7 +34,7 @@ function Swipe(el, opts) {
 
     var afId        = null;
 
-    el.addEventListener('mousedown', function(evt) {
+    el.addEventListener(EVT_DOWN, function(evt) {
 
         // cancel inertia
         if (afId) {
@@ -93,23 +104,26 @@ function Swipe(el, opts) {
             });
         }
 
-        var cancel = rattrap.startCapture(document, {
-            mousemove: function(evt) {
-                handleMove(
-                    Date.now(),
-                    axis === 'y' ? startX : evt.pageX,
-                    axis === 'x' ? startY : evt.pageY
-                );
-            },
-            mouseup: function() {
-                self.emit('touchend');
-                var moving = Math.sqrt(vx*vx + vy*vy) > EPSILON;
-                if (inertia && moving) {
-                    setupInertia();
-                }
-                cancel();
+        var hnd = {};
+        
+        hnd[EVT_MOVE] = function(evt) {
+            handleMove(
+                Date.now(),
+                axis === 'y' ? startX : evt.pageX,
+                axis === 'x' ? startY : evt.pageY
+            );
+        };
+
+        hnd[EVT_UP] = function() {
+            self.emit('touchend');
+            var moving = Math.sqrt(vx*vx + vy*vy) > EPSILON;
+            if (inertia && moving) {
+                setupInertia();
             }
-        });
+            cancel();
+        }
+
+        var cancel = rattrap.startCapture(document, hnd);
 
     });
 
