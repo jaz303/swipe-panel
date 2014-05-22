@@ -128,12 +128,22 @@ function Swipe(el, opts) {
 
         if (touch) {
 
+            function findTouch(evt) {
+                var cts = evt.changedTouches;
+                for (var i = 0; i < cts.length; ++i) {
+                    if (cts[i].identifier === touchId) {
+                        return cts[i];
+                    }
+                }
+                return null;
+            }
+
             // var styleBefore = document.body.style.pointerEvents;
             // document.body.style.pointerEvents = 'none !important';
 
             function touchMove(evt) {
                 
-                var touch = evt.changedTouches.identifiedTouch(touchId);
+                var touch = findTouch(evt);
                 if (!touch) return;
 
                 if (debug) {
@@ -153,7 +163,7 @@ function Swipe(el, opts) {
 
             function touchEnd(evt) {
 
-                var touch = evt.changedTouches.identifiedTouch(touchId);
+                var touch = findTouch(evt);
                 if (!touch) return;
 
                 if (debug) {

@@ -4,10 +4,9 @@ var swipe = require('../');
 window.init = function() {
 
 	var panel = swipe(document.getElementById('target-1'), {
-		debug: true,
-		forceTouch: true,
-		inertia: true,
-		axis: 'y'
+		debug 		: true,
+		inertia 	: true,
+		axis 		: 'y'
 	});
 
 	panel.on('motion', function(evt) {
@@ -39,7 +38,7 @@ function Swipe(el, opts) {
         friction    = opts.friction || 0.8,
         scale       = opts.scale || 1,
         debug       = !!opts.debug,
-        touch       = opts.forceTouch ? true : ('touchstart' in window);
+        touch       = opts.forceTouch ? true : ('ontouchstart' in window);
 
     if (debug) {
         console.log("swipe-panel:touch", touch);
@@ -146,12 +145,22 @@ function Swipe(el, opts) {
 
         if (touch) {
 
-            var styleBefore = document.body.style.pointerEvents;
-            document.body.style.pointerEvents = 'none !important';
+            function findTouch(evt) {
+                var cts = evt.changedTouches;
+                for (var i = 0; i < cts.length; ++i) {
+                    if (cts[i].identifier === touchId) {
+                        return cts[i];
+                    }
+                }
+                return null;
+            }
+
+            // var styleBefore = document.body.style.pointerEvents;
+            // document.body.style.pointerEvents = 'none !important';
 
             function touchMove(evt) {
                 
-                var touch = evt.changedTouches.identifiedTouch(touchId);
+                var touch = findTouch(evt);
                 if (!touch) return;
 
                 if (debug) {
@@ -171,7 +180,7 @@ function Swipe(el, opts) {
 
             function touchEnd(evt) {
 
-                var touch = evt.changedTouches.identifiedTouch(touchId);
+                var touch = findTouch(evt);
                 if (!touch) return;
 
                 if (debug) {
@@ -183,7 +192,7 @@ function Swipe(el, opts) {
 
                 gestureOver();
 
-                document.body.style.pointerEvents = styleBefore;
+                // document.body.style.pointerEvents = styleBefore;
 
                 document.body.removeEventListener('touchmove', touchMove, true);
                 document.body.removeEventListener('touchend', touchEnd, true);
